@@ -1,4 +1,4 @@
-Import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Home, Ticket, Users, PlusCircle, Search, 
   Download, QrCode, Plane, Train, 
@@ -98,12 +98,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   
-  // Payment Step State
   const [pendingBookingData, setPendingBookingData] = useState(null);
   const [showPaymentStep, setShowPaymentStep] = useState(false);
   const [secretCodeInput, setSecretCodeInput] = useState('');
   
-  // Payment Verification State
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [screenshotFileName, setScreenshotFileName] = useState('');
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
@@ -246,7 +244,6 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check if this screenshot file has already been used in previous bookings
     const fileSignature = `${file.name}_${file.size}_${file.lastModified}`;
     const isAlreadyUsed = bookings.some(b => b.screenshotSignature === fileSignature);
 
@@ -275,7 +272,6 @@ export default function App() {
       return;
     }
 
-    // Double check against existing bookings for extra safety
     const isAlreadyUsed = bookings.some(b => b.screenshotSignature === paymentScreenshot.signature);
     if (isAlreadyUsed) {
       setVerificationError('This screenshot has already been used for a previous booking! Please upload a brand new payment screenshot.');
@@ -796,7 +792,6 @@ Respond ONLY in JSON format with this exact structure:
             </div>
           </div>
 
-          {/* Payment Screenshot Upload with Fresh Screenshot Rule */}
           <div className="mb-4 space-y-2">
             <label className="block text-xs font-semibold text-slate-700">Upload NEW Payment Screenshot for Verification *</label>
             <div className="flex items-center justify-center w-full">
@@ -852,7 +847,7 @@ Respond ONLY in JSON format with this exact structure:
     const qrImageUrl = useMemo(() => {
       if (!ticket) return "";
       const dataStr = `IRCTC_UTS_PKT:${ticket.pnr}|${ticket.passengerName}|${ticket.from}->${ticket.to}|${ticket.date}|${ticket.price}|GST:27AAAGM0289C2ZI`;
-      return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(dataStr)}&format=png`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(dataStr)}&format=png`;
     }, [ticket]);
 
     useEffect(() => {
@@ -898,7 +893,6 @@ Respond ONLY in JSON format with this exact structure:
           </div>
         )}
 
-        {/* Greeting Banner */}
         <div className="bg-white px-5 py-2.5 text-black font-semibold text-sm border-b border-slate-200 shadow-sm flex items-center justify-between">
           <span>Thank you {ticket.passengerName} and Happy Journey !</span>
         </div>
@@ -909,7 +903,6 @@ Respond ONLY in JSON format with this exact structure:
               
               <div className="bg-[#1a1c23] text-white flex flex-col relative px-8 pt-4 pb-4 border-t-[6px] border-[#4cd964]">
                 
-                {/* Left Vertical Section */}
                 <div className="absolute left-2.5 top-0 bottom-0 flex items-center justify-center w-6">
                   <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }}>
                     <span className="text-[#9ca3af] text-[20px] font-black tracking-widest uppercase font-sans">INDIAN RAILWAYS</span>
@@ -917,7 +910,6 @@ Respond ONLY in JSON format with this exact structure:
                 </div>
                 <div className="absolute left-10 top-2 bottom-2 w-1" style={{ background: 'repeating-linear-gradient(to bottom, #7c8b9d 0, #7c8b9d 14px, transparent 14px, transparent 24px)' }}></div>
 
-                {/* Right Vertical Section */}
                 <div className="absolute right-2.5 top-0 bottom-0 flex items-center justify-center w-6">
                   <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', whiteSpace: 'nowrap' }}>
                     <span className="text-[#9ca3af] text-[22px] font-black tracking-widest font-sans">भारतीय रेल</span>
@@ -983,12 +975,37 @@ Respond ONLY in JSON format with this exact structure:
                 Note: This ticket is non refundable. Ticket is stored locally on the device. Please do not change your handset or perform factory reset.
               </div>
 
-              <div className="bg-[#e9ecf1] py-8 flex flex-col items-center w-full">
-                 <div className="w-[340px] h-[340px] bg-white p-3 shadow-md rounded flex items-center justify-center border border-slate-200">
+              {/* Action Buttons right above QR code */}
+              <div className="bg-[#e9ecf1] py-4 px-6 flex flex-col items-center space-y-3 w-full">
+                <button 
+                  onClick={() => {
+                    showToast('Opening connecting journey booking...');
+                    setActiveTab('book');
+                    onClose();
+                  }}
+                  className="w-full max-w-xs py-2.5 px-6 rounded-full border-2 border-blue-600 bg-white text-blue-600 font-bold text-xs shadow-md hover:bg-blue-50 transition-all text-center"
+                >
+                  Book Connecting Journey
+                </button>
+                <button 
+                  onClick={() => {
+                    showToast('Starting quick rebooking...');
+                    setActiveTab('book');
+                    onClose();
+                  }}
+                  className="w-full max-w-xs py-2.5 px-6 rounded-full bg-blue-600 text-white font-bold text-xs shadow-md hover:bg-blue-700 transition-all text-center"
+                >
+                  Book Again
+                </button>
+              </div>
+
+              {/* Decreased size of components inside the QR code container */}
+              <div className="bg-[#e9ecf1] pb-8 flex flex-col items-center w-full">
+                 <div className="w-[200px] h-[200px] bg-white p-2 shadow-sm rounded flex items-center justify-center border border-slate-200">
                     <img 
                       src={qrImageUrl} 
                       alt="Ticket High Density QR Code"
-                      className="w-full h-full object-contain filter contrast-125 scale-105"
+                      className="w-full h-full object-contain filter contrast-125 scale-100"
                     />
                  </div>
               </div>
@@ -1062,7 +1079,7 @@ Respond ONLY in JSON format with this exact structure:
                   <p className="text-xl font-bold text-blue-600">{formatCurrency(ticket.price)}</p>
                 </div>
                 <div className="bg-white py-4 flex flex-col items-center">
-                   <div className="w-40 h-40 bg-white p-1 shadow-sm flex items-center justify-center border border-slate-100 rounded">
+                   <div className="w-32 h-32 bg-white p-1 shadow-sm flex items-center justify-center border border-slate-100 rounded">
                       <img 
                         src={qrImageUrl} 
                         alt="High Density QR Code"
@@ -1145,6 +1162,8 @@ Respond ONLY in JSON format with this exact structure:
           touch-action: manipulation;
           -webkit-text-size-adjust: 100%;
           user-select: none;
+          max-width: 100%;
+          overflow-x: hidden;
         }
         @media print {
           body * { visibility: hidden; }
