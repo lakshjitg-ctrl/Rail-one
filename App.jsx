@@ -139,10 +139,29 @@ export default function App() {
     if (!user || !db) return;
 
     const bookingsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'bookings');
-    const unsubBookings = onSnapshot(bookingsRef, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => b.createdAt - a.createdAt);
-      setBookings(data);
+    const unsubBookings = onSnapshot(bookingsRef, async (snapshot) => {
+      const now = Date.now();
+      const hundredHoursMs = 100 * 60 * 60 * 1000;
+      
+      const loadedBookings = [];
+      snapshot.docs.forEach(async (docSnap) => {
+        const data = docSnap.data();
+        const createdAt = data.createdAt || now;
+        
+        // Auto-delete if older than 100 hours
+        if (now - createdAt > hundredHoursMs) {
+          try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'bookings', docSnap.id));
+          } catch (e) {
+            console.error("Error auto-deleting old booking:", e);
+          }
+        } else {
+          loadedBookings.push({ id: docSnap.id, ...data });
+        }
+      });
+
+      loadedBookings.sort((a, b) => b.createdAt - a.createdAt);
+      setBookings(loadedBookings);
       setIsLoading(false);
     }, (err) => console.error(err));
 
@@ -244,7 +263,7 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const fileSignature = `${file.name}_${file.size}_${file.lastModified}`;
+    const fileSignature = `${file.name}_${file.size}_${file.lastModified}_${Date.now()}`;
     const isAlreadyUsed = bookings.some(b => b.screenshotSignature === fileSignature);
 
     if (isAlreadyUsed) {
@@ -770,12 +789,12 @@ Respond ONLY in JSON format with this exact structure:
               <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                 L
               </div>
-              <span className="font-bold text-slate-800 text-base">Lakshjit Gaurkhede</span>
+              <span className="font-bold text-slate-800 text-base">Mr LAXJIT MANOJ MANOJ GAURKHEDE</span>
             </div>
 
             <div className="relative w-48 h-48 bg-white border border-slate-200 p-2 rounded-xl shadow-sm flex items-center justify-center mb-2">
               <img 
-                src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=lakshjitg@okaxis&pn=Lakshjit%20Gaurkhede&am=" 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=lakshjitg@okaxis&pn=Mr%20LAXJIT%20MANOJ%20MANOJ%20GAURKHEDE&am=" 
                 alt="UPI QR Code" 
                 className="w-full h-full object-contain"
               />
@@ -903,14 +922,14 @@ Respond ONLY in JSON format with this exact structure:
               
               <div className="bg-[#1a1c23] text-white flex flex-col relative px-8 pt-4 pb-4 border-t-[6px] border-[#4cd964]">
                 
-                <div className="absolute left-2.5 top-0 bottom-0 flex items-center justify-center w-6">
+                <div className="absolute left-2.5 top-0 bottom-0 flex items-center justify-center w-6 z-10">
                   <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }}>
                     <span className="text-[#9ca3af] text-[20px] font-black tracking-widest uppercase font-sans">INDIAN RAILWAYS</span>
                   </div>
                 </div>
                 <div className="absolute left-10 top-2 bottom-2 w-1" style={{ background: 'repeating-linear-gradient(to bottom, #7c8b9d 0, #7c8b9d 14px, transparent 14px, transparent 24px)' }}></div>
 
-                <div className="absolute right-2.5 top-0 bottom-0 flex items-center justify-center w-6">
+                <div className="absolute right-2.5 top-0 bottom-0 flex items-center justify-center w-6 z-10">
                   <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', whiteSpace: 'nowrap' }}>
                     <span className="text-[#9ca3af] text-[22px] font-black tracking-widest font-sans">भारतीय रेल</span>
                   </div>
@@ -1001,7 +1020,7 @@ Respond ONLY in JSON format with this exact structure:
 
               {/* Decreased size of components inside the QR code container */}
               <div className="bg-[#e9ecf1] pb-8 flex flex-col items-center w-full">
-                 <div className="w-[200px] h-[200px] bg-white p-2 shadow-sm rounded flex items-center justify-center border border-slate-200">
+                 <div className="w-[140px] h-[140px] bg-white p-1.5 shadow-sm rounded flex items-center justify-center border border-slate-200">
                     <img 
                       src={qrImageUrl} 
                       alt="Ticket High Density QR Code"
@@ -1079,7 +1098,7 @@ Respond ONLY in JSON format with this exact structure:
                   <p className="text-xl font-bold text-blue-600">{formatCurrency(ticket.price)}</p>
                 </div>
                 <div className="bg-white py-4 flex flex-col items-center">
-                   <div className="w-32 h-32 bg-white p-1 shadow-sm flex items-center justify-center border border-slate-100 rounded">
+                   <div className="w-28 h-28 bg-white p-1 shadow-sm flex items-center justify-center border border-slate-100 rounded">
                       <img 
                         src={qrImageUrl} 
                         alt="High Density QR Code"
@@ -1164,6 +1183,7 @@ Respond ONLY in JSON format with this exact structure:
           user-select: none;
           max-width: 100%;
           overflow-x: hidden;
+          touch-action: pan-x pan-y;
         }
         @media print {
           body * { visibility: hidden; }
