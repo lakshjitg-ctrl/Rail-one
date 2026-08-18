@@ -59,7 +59,7 @@ const firebaseConfig =
   Object.keys(JSON.parse(__firebase_config)).length > 0
     ? JSON.parse(__firebase_config)
     : {
-        apiKey: "AIzaSyDUVDPru0HD6MZ0F5l8tBxyc38ZMpvjVHY",
+        apiKey: "AIzaSyDUVdPr0HD6MZ0F5l8tBxyc38ZMpvjVHY",
         authDomain: "travelproo.firebaseapp.com",
         projectId: "travelproo",
         storageBucket: "travelproo.firebasestorage.app",
